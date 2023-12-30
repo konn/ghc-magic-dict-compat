@@ -19,7 +19,7 @@ module GHC.Magic.Dict.Compat (
 ) where
 
 #if MIN_VERSION_ghc_prim(0,9,0)
-import qualified GHC.Magic.Dict as GHC.Magic.Dict.Compat
+import GHC.Magic.Dict (withDict)
 #else
 
 import GHC.Types (RuntimeRep, TYPE)
