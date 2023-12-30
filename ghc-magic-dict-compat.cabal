@@ -24,6 +24,7 @@ library
   exposed-modules:
     GHC.Magic.Dict.Compat
     GHC.Magic.Dict.Plugin
+    GHC.TypeError.Compat
 
   if impl(ghc <9.4)
     other-modules: GHC.Magic.Dict.Plugin.Old
@@ -47,13 +48,19 @@ library
 test-suite ghc-magic-dict-compat-test
   type:               exitcode-stdio-1.0
   main-is:            Spec.hs
-  other-modules:      Paths_ghc_magic_dict_compat
+  other-modules:
+    GHC.Magic.Dict.CompatSpec
+    GHC.Magic.Dict.Defs
+    GHC.Magic.Dict.Errors
+    GHC.Magic.Dict.Goods
+    Paths_ghc_magic_dict_compat
+
   hs-source-dirs:     test
   ghc-options:
-    -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wmissing-export-lists
-    -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
-    -threaded -rtsopts -with-rtsopts=-N
+    -fobject-code -Wall -Wcompat -Widentities
+    -Wincomplete-record-updates -Wincomplete-uni-patterns
+    -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields
+    -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
 
   build-tool-depends: tasty-discover:tasty-discover -any
   build-depends:

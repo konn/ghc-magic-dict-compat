@@ -18,7 +18,7 @@ import GHC.Core.Predicate
 import GHC.Core.TyCon
 import GHC.Core.Type
 import GHC.Data.FastString
-import GHC.Plugins (Plugin (..), defaultPlugin, mkModuleName)
+import GHC.Plugins (Plugin (..), defaultPlugin, mkModuleName, purePlugin)
 import GHC.Tc.Instance.Family (tcInstNewTyCon_maybe)
 import GHC.Tc.Plugin hiding (newWanted)
 import GHC.Tc.Types
@@ -27,31 +27,39 @@ import GHC.Tc.Types.Evidence
 import GHC.TcPluginM.Extra
 import GHC.Types.Id
 import GHC.Types.Name
+import GHC.Utils.Outputable
 
 plugin :: Plugin
-plugin = defaultPlugin {tcPlugin = const $ Just withDictPlugin}
+plugin =
+  defaultPlugin
+    { tcPlugin = const $ Just withDictPlugin
+    , pluginRecompile = purePlugin
+    }
 
 withDictPlugin :: TcPlugin
 withDictPlugin =
-  TcPlugin
-    { tcPluginStop = const $ pure ()
-    , tcPluginSolve = const solveWithDict
-    , tcPluginInit = pure ()
-    }
+  tracePlugin
+    "WithDictPlugin"
+    TcPlugin
+      { tcPluginStop = const $ pure ()
+      , tcPluginSolve = const solveWithDict
+      , tcPluginInit = pure ()
+      }
 
 data Info = Info
   { _WithDict :: !Class
   , _WithDictDataCon :: !DataCon
-  , _unsafeWithDict :: !TyCon
   }
 
 solveWithDict :: TcPluginSolver
-solveWithDict _gs _ds wanteds = do
+solveWithDict _ _ [] = pure $ TcPluginOk [] []
+solveWithDict gs _ wanteds = do
+  let subs = map fst $ mkSubst' gs
   info <- lookupInfo
   let withDicts =
         mapMaybe
           ( liftA2 (,)
-              <$> (liftA2 (,) <$> pure . ctLoc <*> decodeWithDictPred info . ctPred)
+              <$> (liftA2 (,) <$> pure . ctLoc <*> decodeWithDictPred info . ctPred . substCt subs)
               <*> pure
           )
           wanteds
@@ -62,19 +70,38 @@ solveWithDict _gs _ds wanteds = do
           (Just (pf, newWants), ct) -> (mempty, DL.singleton (pf, ct), DL.fromList newWants)
       )
       <$> mapM (bitraverse (uncurry $ solveWithDictPred info) pure) withDicts
+  tcPluginTrace
+    "solveWithDict/contradictions"
+    (ppr $ DL.toList contrs)
+  tcPluginTrace "solveWithDict/solveds" $ ppr $ DL.toList solved
+  tcPluginTrace "solveWithDict/newWanteds" $ ppr $ DL.toList wants
   pure $
     if null contrs
       then TcPluginContradiction $ DL.toList contrs
       else TcPluginOk (DL.toList solved) (DL.toList wants)
 
+mkNonCanonical' ::
+  CtLoc -> CtEvidence -> Ct
+mkNonCanonical' origCtl ev =
+  let ct_ls = ctLocSpan origCtl
+      ctl = ctEvLoc ev
+      wanted = mkNonCanonical ev
+   in setCtLoc wanted (setCtLocSpan ctl ct_ls)
+
 solveWithDictPred :: Info -> CtLoc -> DecodedPred -> TcPluginM (Maybe (EvTerm, [Ct]))
 solveWithDictPred Info {} loc DecodedPred {..} = do
+  tcPluginTrace "solveWithDictPred" (ppr (constraint, argType))
   case tcInstNewTyCon_maybe constrTyCon constrArgs of
-    Nothing -> pure Nothing
+    Nothing -> do
+      tcPluginTrace "solveWithDictPred: Failed!" (ppr (constraint, argType))
+      pure Nothing
     Just (onlyMethodType, co) -> do
-      want <- newWanted loc (mkPrimEqPred argType onlyMethodType)
+      tcPluginTrace "solveWithDictPred: singleton class found" (ppr (constraint, argType, onlyMethodType, co))
+      let nomEq = mkPrimEqPred argType onlyMethodType
+      hole <- newCoercionHole nomEq
+      let want = CtWanted nomEq (HoleDest hole) WDeriv loc
       sv <- unsafeTcPluginTcM $ mkSysLocalM (fsLit "withDict_s") Many argType
-      k <- unsafeTcPluginTcM $ mkSysLocalM (fsLit "withDict_k") Many (mkInvisFunTy Many openAlphaTy constraint)
+      k <- unsafeTcPluginTcM $ mkSysLocalM (fsLit "withDict_k") Many (mkInvisFunTy Many constraint openAlphaTy)
       -- Given co2 : mty ~N# inst_meth_ty, construct the method of
       -- the WithDict dictionary:
       --
@@ -84,7 +111,7 @@ solveWithDictPred Info {} loc DecodedPred {..} = do
             mkCoreLams [runtimeRep1TyVar, openAlphaTyVar, sv, k] $
               Core.Var k
                 `Core.App` (Core.Var sv `Core.Cast` mkTransCo (mkSubCo (ctEvCoercion want)) (mkSymCo co))
-      pure $ Just (EvExpr proof, [CNonCanonical want])
+      pure $ Just (EvExpr proof, [mkNonCanonical' loc want])
 
 data DecodedPred = DecodedPred
   { constraint :: !PredType
@@ -115,5 +142,4 @@ lookupInfo = do
       (fsLit "ghc-magic-dict-compat")
   _WithDict <- tcLookupClass =<< lookupOrig theMod (mkTcOcc "WithDict")
   let _WithDictDataCon = classDataCon _WithDict
-  _unsafeWithDict <- tcLookupTyCon =<< lookupOrig theMod (mkTcOcc "unsafeWithDict")
   pure Info {..}
