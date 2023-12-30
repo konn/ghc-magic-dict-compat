@@ -1,12 +1,12 @@
 module.exports = async ({ github, context, core, glob, io, require }) => {
   const fs = require("fs");
-  const globber = await glob.create("ci/configs/*.project");
+  const globber = await glob.create("ci/configs/*.config");
   const files = await globber.glob();
 
   function generate_obj(fullpath) {
-    const is_head = /-head\.project$/.test(fullpath);
+    const is_head = /-head\.config$/.test(fullpath);
     const path = fullpath.replace(/^.+\//, "ci/configs/");
-    const name = fullpath.replaceAll(/.+\/|\.project$/g, "");
+    const name = fullpath.replaceAll(/.+\/|\.config$/g, "");
     const match = fs
       .readFileSync(fullpath, "utf-8")
       .match(/with-compiler:\s*ghc-([\d\.]+)/);
