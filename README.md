@@ -1,0 +1,1 @@
+# ghc-magic-dict-compat
