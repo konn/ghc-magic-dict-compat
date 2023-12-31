@@ -15,7 +15,25 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {- |
-__NOTE__: To prevent users to define `WithDict` instances, this module defines 'WithDict' the class and 'withDict' the function separately contrary to the "GHC.Magic.Dict".
+This module provides a compatibility layer of 'withDict' and 'WithDict' for GHC <9.4.
+For GHC \<9.4, the definitions of 'WithDict' and 'withDict' are slightly different from those of GHC \>= 9.4 to prevent user-defined instances.
+
+To actually make 'withDict' work, you have to invoke the accompanying GHC Plugin exposed from "GHC.Magic.Dict.Plugin". For example:
+
+@
+{\-# LANGUAGE RankNTypes, ScopedTypeVariables, TypeApplications, ConstraintKinds #-\}
+{\-# GHC_OPTIONS -fplugin "GHC.Magic.Dict.Plugin" #-\}
+module MyModule where
+import "GHC.Magic.Dict.Compat"
+
+class Given a where
+  given :: a
+
+give :: a -> (Given a => r) -> r
+give = 'withDict' \@(Given a) \@a
+@
+
+For GHC \>=9.4, this module just re-exports the module "GHC.Magic.Dict" and the plugin is just a no-op - so you can safely use this package without concerning break anything in newer GHCs.
 -}
 module GHC.Magic.Dict.Compat (
   WithDict,

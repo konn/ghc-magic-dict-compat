@@ -1,3 +1,4 @@
 {
-  "haskell.formattingProvider": "fourmolu"
+  "haskell.formattingProvider": "fourmolu",
+  "git.branchProtection": ["main"]
 }
