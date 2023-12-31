@@ -7,7 +7,7 @@ module GHC.Magic.Dict.Plugin (plugin) where
 
 import GHC.Plugins (Plugin)
 #if MIN_VERSION_ghc(9,4,0)
-import GHC.Plugins (defaultPlugin, purePlugin)
+import GHC.Plugins (defaultPlugin, pluginRecompile, purePlugin)
 
 plugin :: Plugin
 plugin = defaultPlugin { pluginRecompile = purePlugin }
