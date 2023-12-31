@@ -65,8 +65,10 @@ test-suite ghc-magic-dict-compat-test
   build-tool-depends: tasty-discover:tasty-discover -any
   build-depends:
       base                   >=4.7 && <5
+    , falsify
     , ghc-magic-dict-compat
     , tasty
     , tasty-discover
+    , tasty-hunit
 
   default-language:   Haskell2010
