@@ -24,7 +24,8 @@ library
   exposed-modules:
     GHC.Magic.Dict.Compat
     GHC.Magic.Dict.Plugin
-    GHC.TypeError.Compat
+
+  other-modules:    GHC.TypeError.Compat
 
   if impl(ghc <9.4)
     other-modules: GHC.Magic.Dict.Plugin.Old
