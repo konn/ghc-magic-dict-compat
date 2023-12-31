@@ -23,7 +23,7 @@ badClass1 = withDict @(BadClass1 Int) (id @Int) neg
 badClass2 :: Int -> Int -> Bool
 badClass2 = withDict @(BadClass2 Int) ((==) @Int) badeq2
 
-#if !MIN_VERSION_ghc(9,4,1)
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 904
 instance WithDict (Inhabited Void) ()
 #endif
 
