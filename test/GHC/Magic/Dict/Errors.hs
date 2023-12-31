@@ -4,7 +4,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -Wno-orphans -ddump-tc-trace #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fdefer-type-errors -Wno-deferred-type-errors -dcore-lint #-}
 {-# OPTIONS_GHC -fplugin GHC.Magic.Dict.Plugin #-}
 
