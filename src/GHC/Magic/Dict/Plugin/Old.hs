@@ -89,7 +89,7 @@ mkNonCanonical' origCtl ev =
    in setCtLoc wanted (setCtLocSpan ctl ct_ls)
 
 solveWithDictPred :: Info -> CtLoc -> DecodedPred -> TcPluginM (Maybe (EvTerm, [Ct]))
-solveWithDictPred Info {} loc DecodedPred {..} = do
+solveWithDictPred Info {..} loc DecodedPred {..} = do
   tcPluginTrace "solveWithDictPred" (ppr (constraint, argType))
   case tcInstNewTyCon_maybe constrTyCon constrArgs of
     Nothing -> do
@@ -108,10 +108,14 @@ solveWithDictPred Info {} loc DecodedPred {..} = do
       --   \@(r :: RuntimeRep) @(a :: TYPE r) (sv :: mty) (k :: cls => a) ->
       --     k (sv |> (sub co ; sym co2))
       let proof =
-            mkCoreLams [runtimeRep1TyVar, openAlphaTyVar, sv, k] $
-              Core.Var k
-                `Core.App` (Core.Var sv `Core.Cast` mkTransCo (mkSubCo (ctEvCoercion want)) (mkSymCo co))
-      pure $ Just (EvExpr proof, [mkNonCanonical' loc want])
+            evDataConApp
+              _WithDictDataCon
+              [constraint, argType]
+              [ mkCoreLams [runtimeRep1TyVar, openAlphaTyVar, sv, k] $
+                  Core.Var k
+                    `Core.App` (Core.Var sv `Core.Cast` mkTransCo (mkSubCo (ctEvCoercion want)) (mkSymCo co))
+              ]
+      pure $ Just (proof, [mkNonCanonical' loc want])
 
 data DecodedPred = DecodedPred
   { constraint :: !PredType
