@@ -77,8 +77,8 @@ solveWithDict gs _ wanteds = do
   tcPluginTrace "solveWithDict/newWanteds" $ ppr $ DL.toList wants
   pure $
     if null contrs
-      then TcPluginContradiction $ DL.toList contrs
-      else TcPluginOk (DL.toList solved) (DL.toList wants)
+      then TcPluginOk (DL.toList solved) (DL.toList wants)
+      else TcPluginContradiction $ DL.toList contrs
 
 mkNonCanonical' ::
   CtLoc -> CtEvidence -> Ct
