@@ -1,6 +1,10 @@
 cabal-version:      1.12
 name:               ghc-magic-dict-compat
 version:            0.0.0.0
+category:           Type System, Compatibility
+synopsis:
+  A compatibility layer and GHC plugin for `withDict` from "GHC.Magic.Dict".
+
 description:
   Please see the README on GitHub at <https://github.com/konn/ghc-magic-dict-compat#readme>
 
