@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
@@ -22,7 +23,9 @@ badClass1 = withDict @(BadClass1 Int) (id @Int) neg
 badClass2 :: Int -> Int -> Bool
 badClass2 = withDict @(BadClass2 Int) ((==) @Int) badeq2
 
+#if !MIN_VERSION_ghc(9,4,1)
 instance WithDict (Inhabited Void) ()
+#endif
 
 badVoid :: Void
 badVoid = withDict @(Inhabited Void) () (inhibitant @Void)
