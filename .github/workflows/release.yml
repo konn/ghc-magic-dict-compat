@@ -24,6 +24,6 @@ jobs:
       run: cabal sdist
     - uses: haskell-actions/hackage-publish@v1
       with:
-        hackageToken: $
+        hackageToken: ${{ secrets.HACKAGE_ACCESS_TOKEN }}
         packagesPath: dist-newstyle/sdist
         publish: false
