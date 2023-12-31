@@ -74,7 +74,7 @@ test_successes =
     , testProperty "give i given == i" $ do
         i <- F.gen $ F.int $ (-128, 128) `F.withOrigin` 0
         F.assert $ P.expect i .$ ("result", give i given)
-    , testProperty "give i (give j given) == j" $ do
+    , testProperty "give i (give j given) == i" $ do
         i <-
           F.genWith (Just . ("i = " <>) . show) $
             F.int $
@@ -83,8 +83,8 @@ test_successes =
           F.genWith (Just . ("j = " <>) . show) $
             F.int $
               (-128, 128) `F.withOrigin` 0
-        F.assert $ P.expect j .$ ("result", give i (give j given))
-    , testProperty "give i (given, give j given) == (i, j)" $ do
+        F.assert $ P.expect i .$ ("result", give i (give j given))
+    , testProperty "give i (given, give j given) == (i, i)" $ do
         i <-
           F.genWith (Just . ("i = " <>) . show) $
             F.int $
@@ -93,5 +93,15 @@ test_successes =
           F.genWith (Just . ("j = " <>) . show) $
             F.int $
               (-128, 128) `F.withOrigin` 0
-        F.assert $ P.expect (i, j) .$ ("result", give i (given, give j given))
+        F.assert $ P.expect (i, i) .$ ("result", give i (given, give j given))
+    , testProperty "(give i given, give j given) == (i, j)" $ do
+        i <-
+          F.genWith (Just . ("i = " <>) . show) $
+            F.int $
+              (-128, 128) `F.withOrigin` 0
+        j <-
+          F.genWith (Just . ("j = " <>) . show) $
+            F.int $
+              (-128, 128) `F.withOrigin` 0
+        F.assert $ P.expect (i, j) .$ ("result", (give i given, give j given))
     ]
